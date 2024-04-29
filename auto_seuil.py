@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 
 # Charger l'image
-image = cv2.imread("I_.png", cv2.IMREAD_GRAYSCALE)
+image = cv2.imread("X_.png", cv2.IMREAD_GRAYSCALE)
 
-# Define the corner coordinates of the figure (ensure data type is float)
+ 
 sommets = np.array([
     [153, 709],
     [153, 100],
@@ -14,7 +14,7 @@ sommets = np.array([
     [893, 100]
 ], dtype=np.float32)
 
-# Calculate bounding box coordinates (convert to integers for slicing)
+
 min_x = int(min(point[0] for point in sommets))
 max_x = int(max(point[0] for point in sommets))
 min_y = int(min(point[1] for point in sommets))
@@ -74,7 +74,7 @@ for col in range(0,image_resultat.shape[1]-1):
       # Ajouter la position (x, y) du pixel noir à la liste
       positions_pixels_noirs.append(lig)
       image_resultat[lig,col] = 255
-    #passer la valeur du pixel visité à noir 
+      #passer la valeur du pixel visité à blanc
     
 
   # Si la liste de positions n'est pas vide
@@ -87,9 +87,6 @@ for col in range(0,image_resultat.shape[1]-1):
     # Définir le pixel à la position moyenne calculée comme noir (0) dans l'image résultat
     image_resultat[int(moyenne_l),col] = 0
 
-    # Marquer tous les pixels noirs de la liste comme blancs (255) pour éviter de les resélectionner
-    #for pixel in positions_pixels_noirs:
-    #  image[pixel[1], pixel[0]] = 255
 
 # Afficher l'image résultat
 plt.imshow(image_resultat, cmap='gray')
@@ -107,13 +104,12 @@ def find_pixel_image(image):
     # Convertir l'image en gris si pas encore fait 
     if len(image.shape) > 2:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
+    i = 0
     for col in range(0,image.shape[1]-1):
         for lig in range(0,image.shape[0]-1):
             # Vérifier si le pixel est noir (valeur 0)
             if image[lig,col] == 0:
                return ((lig,col))
-    # No black pixels found
     return None
 
 """
@@ -129,12 +125,21 @@ else:
 #Maintenant qu'on sait determiner le premier pixel de l'image on va definir un robot a deux états qui va nous aider a determiner les point d'interet
 #recuperer la position de tous les pixel noir de l'image 
 pixels_noirs= []
+image_test = np.copy(image_resultat)
 for col in range(0,image_resultat.shape[1]-1):
   for lig in range(0,image_resultat.shape[0]-1):
     # Vérifier si le pixel est noir (valeur 0)
-    if image[lig,col] == 0:
+    image_test[lig,col] = 255
+    if (image_resultat[lig,col] == 0) and (col%5 == 0):
       # Ajouter la position (x, y) du pixel noir à la liste
       pixels_noirs.append((lig,col))
+      image_test[lig,col] = 0
+    
+
+plt.imshow(image_test, cmap='gray')
+plt.title("Image binaire après seuillage standard")
+plt.axis('off')
+plt.show()
 etat = "+"
 
 #tentative d'affinage/interpolation  des points 
@@ -149,26 +154,15 @@ for i in range (len(pixels_noirs)-2):
 
 print(pixel)
 pixels_noirs = pixel"""
-points_critiques_plus = []
-points_critiques_moins = []
+
+points_critiques = []
 for i in range (len(pixels_noirs)-1):
    if (etat == "+") and (pixels_noirs[i][0] > pixels_noirs[i+1][0]):
-      points_critiques_plus.append((pixels_noirs[i][0],pixels_noirs[i][1]))
+      points_critiques.append((pixels_noirs[i][0],pixels_noirs[i][1]))
       etat = "-"
    if (etat == "-") and (pixels_noirs[i][0] < pixels_noirs[i+1][0]):
-      points_critiques_moins.append((pixels_noirs[i][0],pixels_noirs[i][1]))
+      points_critiques.append((pixels_noirs[i][0],pixels_noirs[i][1]))
       etat = "+"
 
-#test
-image_test= np.copy(image_resultat)
-for col in range(0,image_test.shape[1]-1):
-  for lig in range(0,image_test.shape[0]-1):
-    image_test[lig,col] = 255
-
-for (x,y) in points_critiques:
-   image_test[x,y] = 0
-
-plt.imshow(image_test, cmap='gray')
-plt.title("Image binaire après seuillage standard")
-plt.axis('off')
-plt.show()
+print(points_critiques)
+print ( len(points_critiques))
